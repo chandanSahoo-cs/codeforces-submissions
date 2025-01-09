@@ -20,28 +20,25 @@ def fetch_submissions(username):
     return response.json()["result"]
 
 def save_submission(submission, base_dir):
+    # Check if the 'program' key exists
+    code = submission.get("program")
+    if not code:
+        print(f"Skipping submission {submission.get('id')} due to missing 'program'")
+        return
+
+    # Extract details
     contest_id = submission["contestId"]
-    problem_id = submission["problem"]["index"]
-    language = submission["programmingLanguage"]
-    extension = LANGUAGE_EXTENSIONS.get(language, ".txt")
-    submission_id = submission["id"]  # Unique ID for each submission
+    index = submission["problem"]["index"]
+    submission_id = submission["id"]
+    extension = get_extension(submission["programmingLanguage"])
 
-    code = submission["program"]
-    if not code.strip():
-        return  # Skip empty submissions
+    # Create directory and save the file
+    folder = os.path.join(base_dir, f"Contest-{contest_id}")
+    os.makedirs(folder, exist_ok=True)
+    file_path = os.path.join(folder, f"{index}_{submission_id}.{extension}")
+    with open(file_path, "w") as f:
+        f.write(code)
 
-    # Directory for the contest
-    contest_dir = base_dir / f"Contest-{contest_id}"
-    contest_dir.mkdir(parents=True, exist_ok=True)
-
-    # Save the file with a unique name (submission ID)
-    file_name = f"{problem_id}_{submission_id}{extension}"
-    file_path = contest_dir / file_name
-
-    with open(file_path, "w", encoding="utf-8") as file:
-        file.write(code)
-
-    print(f"Saved: {file_path}")
 
 def main():
     base_dir = Path(".")
